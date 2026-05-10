@@ -1,0 +1,46 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.4' // 4.0.6 대신 현재 안정화된 최신 3.x 버전 사용 권장
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.kms'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Web (React와 통신하기 위해 반드시 필요)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // JPA & MySQL
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // DevTools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test' // 통합 테스트 팩
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // 테스트에서도 Lombok 사용
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
