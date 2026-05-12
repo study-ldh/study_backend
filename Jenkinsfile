@@ -19,7 +19,9 @@ pipeline {
         stage('Checkout') {
             steps {
                 // 본인의 깃허브 주소로 바꿔주세요
-                git branch: 'main', url: 'git@github.com:study-ldh/study_backend.git'
+                git branch: 'main',
+             credentialsId: 'back-study-ssh-key', // 이 줄을 추가해야 합니다!
+                       url: 'git@github.com:study-ldh/study_backend.git'
             }
         }
 
