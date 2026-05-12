@@ -29,7 +29,9 @@ jib {
         // 타임존 설정 (한국 시간 기준)
         creationTime = 'USE_CURRENT_TIMESTAMP'
         environment = [
-                "TZ": "Asia/Seoul"
+                "TZ": "Asia/Seoul",
+                // IP가 바뀔 때마다 빌드하지 않도록 변수(\${DB_HOST}) 처리
+                "SPRING_DATASOURCE_URL": "jdbc:mysql://\${DB_HOST}:3306/study?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
         ]
     }
 }
