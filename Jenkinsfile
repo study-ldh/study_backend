@@ -2,53 +2,46 @@ pipeline {
     agent any
 
     environment {
-        // 도커 허브 계정명 (고정)
+        // 1. 도커 허브 정보 (본인 계정)
         DOCKER_HUB_ID = 'fasfaff'
         IMAGE_NAME = 'wms-backend'
 
-        // EC2 접속 정보 (고정)
+        // 2. AWS EC2 서버 정보
         EC2_IP = '172.31.46.63'
         EC2_USER = 'ubuntu'
 
-        // 젠킨스 금고에서 불러올 별명들 (방금 확인한 것!)
+        // 3. 젠킨스 금고(Credentials) 이름 - 사진에서 확인한 이름들!
         SSH_CRED_ID = 'back-study-ssh-key'
-        DOCKER_CRED_ID = 'back_study'   // 젠킨스에 새로 등록할 이름!
+        DOCKER_CRED_ID = 'back_study'
     }
 
     stages {
+        // [1단계] 깃허브에서 최신 코드 가져오기
         stage('Checkout') {
             steps {
-                // 본인의 깃허브 주소로 바꿔주세요
                 git branch: 'main',
-             credentialsId: 'back-study-ssh-key', // 이 줄을 추가해야 합니다!
-                       url: 'git@github.com:study-ldh/study_backend.git'
+                        credentialsId: "${SSH_CRED_ID}",
+                        url: 'git@github.com:study-ldh/study_backend.git'
             }
         }
 
-        stage('Build & Push with Jib') {
+        // [2단계] 빌드하고 도커 허브에 이미지 올리기 (윈도우 전용 bat 명령어)
+        stage('Build & Push') {
             steps {
-                // 젠킨스 금고(DOCKER_CRED_ID)에서 ID/PW를 꺼내와서 Jib로 쏘는 단계
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                    sh "chmod +x gradlew"
-                    sh "./gradlew jib -Djib.to.auth.username=${DOCKER_USERNAME} -Djib.to.auth.password=${DOCKER_PASSWORD}"
+                    // 윈도우 젠킨스이므로 bat 사용
+                    bat "gradlew.bat jib -Djib.to.auth.username=%DOCKER_USERNAME% -Djib.to.auth.password=%DOCKER_PASSWORD%"
                 }
             }
         }
 
-        stage('Deploy to EC2') {
+        // [3단계] AWS 우분투 서버에 원격 접속해서 실행하기
+        stage('Deploy') {
             steps {
-                // 젠킨스 금고(SSH_CRED_ID)에서 키를 꺼내서 EC2에 접속하는 단계
                 sshagent(credentials: ["${SSH_CRED_ID}"]) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "
-                            docker pull ${DOCKER_HUB_ID}/${IMAGE_NAME}:latest &&
-                            docker rm -f ${IMAGE_NAME} || true &&
-                            docker run -d -p 8080:8080 --name ${IMAGE_NAME} \
-                              --link wms-mysql \
-                              -e DB_HOST=wms-mysql \
-                              -e FRONTEND_URL=http://${EC2_IP}:3000 \
-                              ${DOCKER_HUB_ID}/${IMAGE_NAME}:latest
-                        "
+                    // 서버 접속 및 도커 실행 (줄바꿈 없이 한 줄로 처리하는 것이 윈도우에서 안전합니다)
+                    bat """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "docker pull ${DOCKER_HUB_ID}/${IMAGE_NAME}:latest && docker rm -f ${IMAGE_NAME} || true && docker run -d -p 8080:8080 --name ${IMAGE_NAME} --link wms-mysql -e DB_HOST=wms-mysql -e FRONTEND_URL=http://${EC2_IP}:3000 ${DOCKER_HUB_ID}/${IMAGE_NAME}:latest"
                     """
                 }
             }
