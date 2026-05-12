@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.4' // 4.0.6 대신 현재 안정화된 최신 3.x 버전 사용 권장
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.google.cloud.tools.jib' version '3.4.1' // 1. Jib 플러그인 추가
 }
 
 group = 'com.kms'
@@ -10,6 +11,26 @@ version = '0.0.1-SNAPSHOT'
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+jib {
+    from {
+        image = 'eclipse-temurin:17-jre-alpine'
+    }
+    to {
+        image = 'fasfaff/wms-backend'
+        tags = ['latest', "${project.version}"]
+    }
+    container {
+        ports = ['8080']
+        jvmFlags = ['-Xms512m', '-Xmx512m', '-Dfile.encoding=UTF-8']
+
+        // 타임존 설정 (한국 시간 기준)
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        environment = [
+                "TZ": "Asia/Seoul"
+        ]
     }
 }
 
