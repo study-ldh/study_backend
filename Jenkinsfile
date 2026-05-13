@@ -46,12 +46,12 @@ pipeline {
                 // sshagent -> withCredentials 변경
                 // ssh-agent는 원래 Linux 기반 동작
                 // withCredentials 윈도우 기반
+                // 한줄 쓰기 및 %SSH_KEY% ""로 감싸기
                 withCredentials([sshUserPrivateKey(credentialsId: 'deploy-key', keyFileVariable: 'SSH_KEY')]) {
                     bat """
-                ssh -i %SSH_KEY% -o StrictHostKeyChecking=no ubuntu@${deployHost} ^
-                "aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecrUrl} && ^
-                 docker run -d -p 80:8888 ${ecrUrl}/${repository}:${currentBuild.number}"
-            """
+ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no ubuntu@${deployHost} ^
+"aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecrUrl} && docker run -d -p 80:8888 ${ecrUrl}/${repository}:${currentBuild.number}"
+"""
                 }
             }
         }
