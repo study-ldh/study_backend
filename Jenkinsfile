@@ -20,7 +20,7 @@ pipeline {
         // Stage 2: Gradle 빌드
         stage('Build Codes by Gradle') {
             steps {
-                sh "./gradlew clean build"
+                bat "gradlew.bat clean build"
             }
         }
 
@@ -30,11 +30,11 @@ pipeline {
             steps {
                 withAWS(region: "${region}", credentials: "aws-key") {
                     ecrLogin()
-                    sh """
-                        curl -0 https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/0.4.0/linux-amd64/${ecrLoginHelper}
+                    bat """
+                        curl -O https://amazon-ecr-credential-helper-releases.s3.us-east-2.amazonaws.com/0.4.0/linux-amd64/${ecrLoginHelper}
                         
                         cd ${mainDir}
-                        ./gradlew jib -Djib.to.image=${dockerHubId}/${repository}:${currentBuild.number} -Djib.console='plain'
+                        gradlew.bat jib -Djib.to.image=${ecrUrl}/${repository}:${currentBuild.number} -Djib.console='plain'
                     """
                 }
             }
@@ -45,9 +45,10 @@ pipeline {
             steps {
                 // 이미지 하단의 sshagent 구조 반영
                 sshagent(credentials: ['deploy-key']) {
-                    sh "ssh -o StrictHostKeyChecking=no ubuntu@${deployHost} \
-                    'aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecrUrl}/${repository}; \
-                    docker run -d -p 80:8888 -t ${ecrUrl}/${repository}:${currentBuild.number};'"
+                    // 윈도우 bat은 줄바꿈 시 \ 대신 ^를 사용하거나 한 줄로 쭉 써야 합니다.
+                    bat "ssh -o StrictHostKeyChecking=no ubuntu@${deployHost} ^" +
+                            "'aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecrUrl}; ^" +
+                            " docker run -d -p 80:8888 -t ${ecrUrl}/${repository}:${currentBuild.number};'"
                 }
             }
         }
