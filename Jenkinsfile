@@ -43,12 +43,15 @@ pipeline {
         // Stage 4: 운영 서버(EC2) 배포
         stage('Deploy to AWS EC2 VM') {
             steps {
-                // 이미지 하단의 sshagent 구조 반영
-                sshagent(credentials: ['deploy-key']) {
-                    // 윈도우 bat은 줄바꿈 시 \ 대신 ^를 사용하거나 한 줄로 쭉 써야 합니다.
-                    bat "ssh -o StrictHostKeyChecking=no ubuntu@${deployHost} ^" +
-                            "'aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecrUrl}; ^" +
-                            " docker run -d -p 80:8888 -t ${ecrUrl}/${repository}:${currentBuild.number};'"
+                // sshagent -> withCredentials 변경
+                // ssh-agent는 원래 Linux 기반 동작
+                // withCredentials 윈도우 기반
+                withCredentials([sshUserPrivateKey(credentialsId: 'deploy-key', keyFileVariable: 'SSH_KEY')]) {
+                    bat """
+                ssh -i %SSH_KEY% -o StrictHostKeyChecking=no ubuntu@${deployHost} ^
+                "aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ecrUrl} && ^
+                 docker run -d -p 80:8888 ${ecrUrl}/${repository}:${currentBuild.number}"
+            """
                 }
             }
         }
