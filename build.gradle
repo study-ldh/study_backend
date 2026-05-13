@@ -5,8 +5,8 @@ plugins {
     id 'com.google.cloud.tools.jib' version '3.4.1' // 1. Jib 플러그인 추가
 }
 
-group = 'com.kms'
-version = '0.0.1-SNAPSHOT'
+group = 'com.insight'
+version = 'ver.1.0'
 
 java {
     toolchain {
@@ -16,23 +16,24 @@ java {
 
 jib {
     from {
-        image = 'eclipse-temurin:17-jre-alpine'
-    }
-    to {
-        image = 'fasfaff/wms-backend'
-        tags = ['latest', "${project.version}"]
+        image = 'amazoncorretto:17-alpine'
     }
     container {
-        ports = ['8080']
-        jvmFlags = ['-Xms512m', '-Xmx512m', '-Dfile.encoding=UTF-8']
+        jvmFlags = ['-Xms512m', '-Xmx512m', '-Dfile.encoding=UTF-8', '-XshowSettings:vm', '-XX:+UnlockExperimentalVMOptions']
+            ports = ['8080']
 
+        environment = [SPRING_OUTPUT_ANSI_ENABLED: "ALWAYS"]
+        labels = [version:project.version, name:project.name, group:project.group]
         // 타임존 설정 (한국 시간 기준)
         creationTime = 'USE_CURRENT_TIMESTAMP'
-        environment = [
-                "TZ": "Asia/Seoul",
-                // IP가 바뀔 때마다 빌드하지 않도록 변수(\${DB_HOST}) 처리
-                "SPRING_DATASOURCE_URL": "jdbc:mysql://\${DB_HOST}:3306/study?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
-        ]
+        format = 'Docker'
+    }
+    extraDirectories {
+        paths {
+            path {
+                from = file('build/libs')
+            }
+        }
     }
 }
 

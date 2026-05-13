@@ -4,8 +4,7 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # DB_HOST라는 환경 변수가 있으면 그걸 쓰고, 없으면 localhost를 써라(기본값)는 뜻입니다.
-    url: jdbc:mysql://${DB_HOST:localhost}:3306/study?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://ec2-52-78-98-7.ap-northeast-2.compute.amazonaws.com:3306/study?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: study
     password: 1q2w3e4r
 
@@ -17,3 +16,5 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+server:
+  port: 8888
